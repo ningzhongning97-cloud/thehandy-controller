@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>小柔 · AI 伴侣</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: "PingFang SC", "Microsoft YaHei", sans-serif;
+      background: #0f0f1a;
+      color: #e8e8f0;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    header {
+      width: 100%;
+      padding: 20px 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #1e1e30;
+    }
+
+    header h1 { font-size: 1.2rem; font-weight: 600; color: #c084fc; }
+    header span { font-size: 0.8rem; color: #666; }
+
+    #connect-panel {
+      margin-top: 40px;
+      background: #16162a;
+      border: 1px solid #2a2a40;
+      border-radius: 16px;
+      padding: 28px;
+      width: 360px;
+    }
+
+    #connect-panel h2 { font-size: 1rem; margin-bottom: 16px; color: #a78bfa; }
+
+    input[type="text"] {
+      width: 100%;
+      padding: 10px 14px;
+      background: #0f0f1a;
+      border: 1px solid #2a2a40;
+      border-radius: 8px;
+      color: #e8e8f0;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.2s;
+    }
+    input[type="text"]:focus { border-color: #7c3aed; }
+
+    button {
+      cursor: pointer;
+      border: none;
+      border-radius: 8px;
+      font-size: 0.9rem;
+      transition: all 0.2s;
+    }
+
+    #btn-connect {
+      width: 100%;
+      margin-top: 12px;
+      padding: 11px;
+      background: #7c3aed;
+      color: #fff;
+    }
+    #btn-connect:hover { background: #6d28d9; }
+
+    #main-panel {
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      width: 100%;
+      max-width: 480px;
+      padding: 24px 16px;
+      flex: 1;
+    }
+
+    /* Avatar */
+    #avatar {
+      width: 100px;
+      height: 100px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #7c3aed, #c084fc);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.8rem;
+      margin-bottom: 12px;
+      position: relative;
+    }
+    #avatar.speaking {
+      animation: pulse 1s ease-in-out infinite;
+    }
+    @keyframes pulse {
+      0%, 100% { box-shadow: 0 0 0 0 rgba(192, 132, 252, 0.4); }
+      50% { box-shadow: 0 0 0 18px rgba(192, 132, 252, 0); }
+    }
+
+    #status-text {
+      font-size: 0.85rem;
+      color: #888;
+      margin-bottom: 24px;
+    }
+
+    /* Chat log */
+    #chat-log {
+      width: 100%;
+      flex: 1;
+      max-height: 280px;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-bottom: 20px;
+      padding: 4px 0;
+    }
+
+    .msg {
+      max-width: 80%;
+      padding: 10px 14px;
+      border-radius: 12px;
+      font-size: 0.92rem;
+      line-height: 1.5;
+    }
+    .msg.user {
+      align-self: flex-end;
+      background: #3b1f6a;
+      color: #e0d4ff;
+    }
+    .msg.ai {
+      align-self: flex-start;
+      background: #1e1e30;
+      color: #e8e8f0;
+    }
+
+    /* Controls */
+    #controls {
+      width: 100%;
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+
+    #btn-mic {
+      width: 64px;
+      height: 64px;
+      border-radius: 50%;
+      background: #7c3aed;
+      color: #fff;
+      font-size: 1.6rem;
+      flex-shrink: 0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    #btn-mic:hover { background: #6d28d9; }
+    #btn-mic.listening {
+      background: #dc2626;
+      animation: pulse 0.8s ease-in-out infinite;
+    }
+
+    #text-input {
+      flex: 1;
+      padding: 12px 14px;
+      background: #16162a;
+      border: 1px solid #2a2a40;
+      border-radius: 8px;
+      color: #e8e8f0;
+      font-size: 0.9rem;
+      outline: none;
+    }
+    #text-input:focus { border-color: #7c3aed; }
+
+    #btn-send {
+      padding: 12px 18px;
+      background: #7c3aed;
+      color: #fff;
+    }
+    #btn-send:hover { background: #6d28d9; }
+
+    /* Device status bar */
+    #device-bar {
+      margin-top: 16px;
+      width: 100%;
+      background: #16162a;
+      border: 1px solid #2a2a40;
+      border-radius: 10px;
+      padding: 12px 16px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.82rem;
+      color: #888;
+    }
+    #device-bar span { color: #c084fc; font-weight: 600; }
+
+    #btn-stop-device {
+      padding: 6px 14px;
+      background: #7f1d1d;
+      color: #fca5a5;
+      font-size: 0.8rem;
+    }
+    #btn-stop-device:hover { background: #991b1b; }
+
+    .toast {
+      position: fixed;
+      bottom: 24px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1e1e30;
+      border: 1px solid #2a2a40;
+      padding: 10px 20px;
+      border-radius: 20px;
+      font-size: 0.85rem;
+      color: #a78bfa;
+      opacity: 0;
+      transition: opacity 0.3s;
+      pointer-events: none;
+    }
+    .toast.show { opacity: 1; }
+  </style>
+</head>
+<body>
+
+<header>
+  <h1>🌸 小柔 AI 伴侣</h1>
+  <span id="conn-badge">未连接</span>
+</header>
+
+<!-- Connect Panel -->
+<div id="connect-panel">
+  <h2>连接设备</h2>
+  <input type="text" id="key-input" placeholder="输入 The Handy Connection Key" />
+  <button id="btn-connect">连 接</button>
+</div>
+
+<!-- Main Panel -->
+<div id="main-panel">
+  <div id="avatar">🌸</div>
+  <div id="status-text">点击麦克风开始说话</div>
+
+  <div id="chat-log"></div>
+
+  <div id="controls">
+    <button id="btn-mic" title="按住说话">🎤</button>
+    <input type="text" id="text-input" placeholder="或者直接打字..." />
+    <button id="btn-send">发送</button>
+  </div>
+
+  <div id="device-bar">
+    <div>速度 <span id="speed-val">—</span> · 位置 <span id="pos-val">—</span></div>
+    <button id="btn-stop-device">紧急停止</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+const API = '';  // same origin
+
+// --- DOM ---
+const connectPanel = document.getElementById('connect-panel');
+const mainPanel    = document.getElementById('main-panel');
+const keyInput     = document.getElementById('key-input');
+const btnConnect   = document.getElementById('btn-connect');
+const connBadge    = document.getElementById('conn-badge');
+const avatar       = document.getElementById('avatar');
+const statusText   = document.getElementById('status-text');
+const chatLog      = document.getElementById('chat-log');
+const btnMic       = document.getElementById('btn-mic');
+const textInput    = document.getElementById('text-input');
+const btnSend      = document.getElementById('btn-send');
+const speedVal     = document.getElementById('speed-val');
+const posVal       = document.getElementById('pos-val');
+const btnStop      = document.getElementById('btn-stop-device');
+const toast        = document.getElementById('toast');
+
+// --- Toast ---
+function showToast(msg, duration = 2500) {
+  toast.textContent = msg;
+  toast.classList.add('show');
+  setTimeout(() => toast.classList.remove('show'), duration);
+}
+
+// --- Connect ---
+btnConnect.addEventListener('click', async () => {
+  const key = keyInput.value.trim();
+  if (!key) { showToast('请输入 Connection Key'); return; }
+  btnConnect.textContent = '连接中...';
+  btnConnect.disabled = true;
+  try {
+    const res = await fetch(`${API}/connect`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ connection_key: key }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '连接失败');
+    connBadge.textContent = '已连接 ✓';
+    connBadge.style.color = '#4ade80';
+    connectPanel.style.display = 'none';
+    mainPanel.style.display = 'flex';
+    addMsg('ai', '你好呀~ 我是小柔，很高兴认识你 💜 有什么想聊的吗？');
+    speakText('你好呀~ 我是小柔，很高兴认识你，有什么想聊的吗？');
+  } catch (e) {
+    showToast(e.message);
+    btnConnect.textContent = '连 接';
+    btnConnect.disabled = false;
+  }
+});
+
+// --- Chat ---
+function addMsg(role, text) {
+  const div = document.createElement('div');
+  div.className = `msg ${role}`;
+  div.textContent = text;
+  chatLog.appendChild(div);
+  chatLog.scrollTop = chatLog.scrollHeight;
+}
+
+async function sendMessage(text) {
+  if (!text.trim()) return;
+  addMsg('user', text);
+  textInput.value = '';
+  statusText.textContent = '小柔正在思考...';
+  avatar.classList.remove('speaking');
+
+  try {
+    const res = await fetch(`${API}/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message: text }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.detail || '出错了');
+
+    addMsg('ai', data.reply);
+    updateDeviceBar(data.actions);
+    avatar.classList.add('speaking');
+    statusText.textContent = '小柔说话中...';
+    speakText(data.reply, () => {
+      avatar.classList.remove('speaking');
+      statusText.textContent = '点击麦克风开始说话';
+    });
+  } catch (e) {
+    showToast('出错了: ' + e.message);
+    statusText.textContent = '点击麦克风开始说话';
+  }
+}
+
+// --- Device bar update ---
+function updateDeviceBar(actions) {
+  if (!actions || !actions.length) return;
+  actions.forEach(a => {
+    if (a.action === 'set_speed') speedVal.textContent = a.value;
+    if (a.action === 'set_position') posVal.textContent = a.value;
+    if (a.action === 'stop') { speedVal.textContent = '0'; posVal.textContent = '—'; }
+  });
+}
+
+// --- Emergency stop ---
+btnStop.addEventListener('click', async () => {
+  await fetch(`${API}/stop`, { method: 'POST' });
+  speedVal.textContent = '0';
+  posVal.textContent = '—';
+  showToast('设备已停止');
+});
+
+// --- Text input send ---
+btnSend.addEventListener('click', () => sendMessage(textInput.value));
+textInput.addEventListener('keydown', e => { if (e.key === 'Enter') sendMessage(textInput.value); });
+
+// --- TTS ---
+function speakText(text, onEnd) {
+  if (!window.speechSynthesis) return onEnd && onEnd();
+  window.speechSynthesis.cancel();
+  const utter = new SpeechSynthesisUtterance(text);
+  utter.lang = 'zh-CN';
+  utter.rate = 1.0;
+  utter.pitch = 1.1;
+
+  // Pick a female Chinese voice if available
+  const voices = window.speechSynthesis.getVoices();
+  const zhVoice = voices.find(v => v.lang.startsWith('zh') && v.name.toLowerCase().includes('female'))
+                || voices.find(v => v.lang.startsWith('zh'));
+  if (zhVoice) utter.voice = zhVoice;
+
+  utter.onend = onEnd || null;
+  window.speechSynthesis.speak(utter);
+}
+
+// Preload voices
+window.speechSynthesis.getVoices();
+window.speechSynthesis.addEventListener('voiceschanged', () => window.speechSynthesis.getVoices());
+
+// --- STT ---
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+
+if (SpeechRecognition) {
+  recognition = new SpeechRecognition();
+  recognition.lang = 'zh-CN';
+  recognition.interimResults = false;
+  recognition.maxAlternatives = 1;
+
+  recognition.onresult = e => {
+    const transcript = e.results[0][0].transcript;
+    textInput.value = transcript;
+    sendMessage(transcript);
+  };
+
+  recognition.onerror = e => {
+    showToast('语音识别出错: ' + e.error);
+    btnMic.classList.remove('listening');
+    statusText.textContent = '点击麦克风开始说话';
+  };
+
+  recognition.onend = () => {
+    btnMic.classList.remove('listening');
+  };
+
+  btnMic.addEventListener('click', () => {
+    if (btnMic.classList.contains('listening')) {
+      recognition.stop();
+    } else {
+      recognition.start();
+      btnMic.classList.add('listening');
+      statusText.textContent = '正在听...';
+    }
+  });
+} else {
+  btnMic.disabled = true;
+  btnMic.title = '浏览器不支持语音识别，请使用 Chrome 或 Edge';
+  showToast('请使用 Chrome/Edge 以支持语音功能');
+}
+</script>
+</body>
+</html>
