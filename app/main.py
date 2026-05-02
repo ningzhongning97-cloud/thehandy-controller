@@ -37,9 +37,9 @@ def get_handy() -> HandyController:
 
 
 def get_ai() -> AIBrain:
-    global ai_brain
+    global ai_brain, handy
     if ai_brain is None:
-        ai_brain = AIBrain(handy_controller=get_handy())
+        ai_brain = AIBrain(handy_controller=handy)  # handy can be None (no device)
     return ai_brain
 
 
@@ -94,6 +94,16 @@ async def chat(req: ChatRequest):
         return ChatResponse(reply=reply, actions=actions)
     except Exception as e:
         logger.error(f"Chat error: {e}")
+        raise HTTPException(status_code=500, detail=str(e))
+
+
+@app.post("/auto-tick", response_model=ChatResponse)
+async def auto_tick():
+    try:
+        ai = get_ai()
+        reply, actions = await ai.auto_tick()
+        return ChatResponse(reply=reply, actions=actions)
+    except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
 

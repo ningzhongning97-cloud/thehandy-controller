@@ -13,7 +13,7 @@ class Config:
     """Configuration class for The Handy Controller"""
 
     # API Configuration
-    API_BASE_URL = os.getenv("HANDY_API_URL", "https://www.handyfeeling.com/api/v1")
+    API_BASE_URL = os.getenv("HANDY_API_URL", "https://www.handyfeeling.com/api/handy/v2")
     CONNECTION_KEY = os.getenv("HANDY_CONNECTION_KEY", "")
     
     # Request Configuration

@@ -106,9 +106,14 @@ class HandyController:
         """
         try:
             self._device_info = self.get_device_info()
+            if not self._device_info.get("connected", False):
+                self._is_connected = False
+                raise HandyConnectionError("设备未在线，请检查 The Handy 是否已连上 WiFi，以及 Connection Key 是否正确")
             self._is_connected = True
             logger.info(f"Connected to device: {self._device_info}")
             return True
+        except HandyConnectionError:
+            raise
         except Exception as e:
             logger.error(f"Failed to connect: {str(e)}")
             self._is_connected = False
@@ -141,60 +146,51 @@ class HandyController:
 
     def get_device_info(self) -> Dict[str, Any]:
         """
-        Get device information
-
-        Returns:
-            Device information dictionary
+        Get device information (v2: /connected)
         """
-        return self._make_request("GET", "/device")
+        return self._make_request("GET", "/connected")
 
     def get_status(self) -> Dict[str, Any]:
         """
-        Get current device status
-
-        Returns:
-            Device status dictionary
+        Get current device status (v2: /info)
         """
-        return self._make_request("GET", "/status")
+        return self._make_request("GET", "/info")
 
     def set_speed(self, speed: int) -> Dict[str, Any]:
         """
-        Set device speed
-
-        Args:
-            speed: Speed value (0-100)
-
-        Returns:
-            Response data
+        Set device speed via HAMP mode (0-100)
         """
         if not 0 <= speed <= 100:
             raise ValueError("Speed must be between 0 and 100")
-        
-        return self._make_request("PUT", "/speed", data={"speed": speed})
+        # v2: set mode → velocity → start
+        self._make_request("PUT", "/mode", data={"mode": 0})
+        self._make_request("PUT", "/hamp/velocity", data={"velocity": speed})
+        return self._make_request("PUT", "/hamp/start")
 
     def set_position(self, position: int) -> Dict[str, Any]:
         """
-        Set device position
-
-        Args:
-            position: Position value (0-100)
-
-        Returns:
-            Response data
+        Set absolute slide position (0-100)
         """
         if not 0 <= position <= 100:
             raise ValueError("Position must be between 0 and 100")
-        
-        return self._make_request("PUT", "/position", data={"position": position})
+        return self._make_request("PUT", "/slide/position/absolute/timestep",
+                                  data={"position": position, "duration": 300})
 
     def stop(self) -> Dict[str, Any]:
-        """
-        Stop the device
+        """Stop the device (HAMP stop)"""
+        return self._make_request("PUT", "/hamp/stop")
 
-        Returns:
-            Response data
-        """
-        return self._make_request("POST", "/stop")
+    def set_stroke(self, min_pos: int, max_pos: int) -> Dict[str, Any]:
+        """Set stroke range: min_pos=bottom, max_pos=top (0-100 each)"""
+        self._make_request("PUT", "/slide/min", data={"position": min_pos})
+        return self._make_request("PUT", "/slide/max", data={"position": max_pos})
+
+    def set_depth_and_pos(self, center: int, depth: int) -> Dict[str, Any]:
+        """Set center position and stroke depth. depth=0 is shallow, 100 is full stroke."""
+        half = int(depth / 2)
+        min_pos = max(0, center - half)
+        max_pos = min(100, center + half)
+        return self.set_stroke(min_pos, max_pos)
 
     def play_script(self, script_id: str) -> Dict[str, Any]:
         """
