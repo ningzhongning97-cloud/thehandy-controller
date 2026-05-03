@@ -223,18 +223,45 @@
       pointer-events: none;
     }
     .toast.show { opacity: 1; }
+
+    #persona-bar {
+      display: none;
+      width: 100%;
+      padding: 10px 16px;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      border-bottom: 1px solid #1e1e30;
+      background: #0f0f1a;
+    }
+    .p-btn {
+      padding: 6px 14px;
+      background: #16162a;
+      border: 1px solid #2a2a40;
+      border-radius: 20px;
+      color: #888;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    .p-btn:hover { border-color: #7c3aed; color: #c084fc; }
+    .p-btn.active { background: #7c3aed; border-color: #7c3aed; color: #fff; }
   </style>
 </head>
 <body>
 
 <header>
   <h1 id="persona-title">🔥 热焰</h1>
-  <div style="display:flex;gap:8px;align-items:center">
-    <button id="btn-ice" onclick="switchPersona('ice')" style="padding:5px 12px;background:#1e1e30;border:1px solid #4a4a60;border-radius:6px;color:#94a3b8;font-size:0.78rem;">🧊 冷颜</button>
-    <button id="btn-flame" onclick="switchPersona('flame')" style="padding:5px 12px;background:#7c3aed;border:1px solid #7c3aed;border-radius:6px;color:#fff;font-size:0.78rem;">🔥 热焰</button>
-    <span id="conn-badge">未连接</span>
-  </div>
+  <span id="conn-badge">未连接</span>
 </header>
+<div id="persona-bar">
+  <button class="p-btn active" data-p="flame"  onclick="switchPersona('flame')">🔥 热焰</button>
+  <button class="p-btn"        data-p="ice"    onclick="switchPersona('ice')">🧊 冷颜</button>
+  <button class="p-btn"        data-p="kitten" onclick="switchPersona('kitten')">🐱 小奶猫</button>
+  <button class="p-btn"        data-p="oneesan" onclick="switchPersona('oneesan')">👑 御姐</button>
+  <button class="p-btn"        data-p="kouhai" onclick="switchPersona('kouhai')">🎓 学妹</button>
+  <button class="p-btn"        data-p="boss"   onclick="switchPersona('boss')">💼 女强人</button>
+</div>
 
 <!-- Connect Panel -->
 <div id="connect-panel">
@@ -267,6 +294,11 @@
 <script>
 const API = '';  // same origin
 
+const PERSONA_TITLES = {
+  flame: '🔥 热焰', ice: '🧊 冷颜', kitten: '🐱 小奶猫',
+  oneesan: '👑 御姐', kouhai: '🎓 学妹', boss: '💼 女强人'
+};
+
 async function switchPersona(p) {
   const res = await fetch(`${API}/set-persona`, {
     method: 'POST',
@@ -274,14 +306,14 @@ async function switchPersona(p) {
     body: JSON.stringify({persona: p}),
   });
   const data = await res.json();
-  const titles = {ice: '🧊 冷颜', flame: '🔥 热焰'};
-  document.getElementById('persona-title').textContent = titles[p];
-  document.getElementById('btn-ice').style.background   = p==='ice'   ? '#1e40af' : '#1e1e30';
-  document.getElementById('btn-ice').style.color        = p==='ice'   ? '#bfdbfe' : '#94a3b8';
-  document.getElementById('btn-flame').style.background = p==='flame' ? '#7c3aed' : '#1e1e30';
-  document.getElementById('btn-flame').style.color      = p==='flame' ? '#fff'    : '#94a3b8';
+  document.getElementById('persona-title').textContent = PERSONA_TITLES[p] || p;
+  document.querySelectorAll('.p-btn').forEach(b => {
+    b.classList.toggle('active', b.dataset.p === p);
+  });
   chatLog.innerHTML = '';
-  showToast(`已切换：${data.name}`);
+  window.speechSynthesis.cancel();
+  isBusy = false;
+  showToast(`已切换：${PERSONA_TITLES[p]}`);
   scheduleNextTick(1000);
 }
 
@@ -327,7 +359,8 @@ btnConnect.addEventListener('click', async () => {
     connBadge.style.color = '#4ade80';
     connectPanel.style.display = 'none';
     mainPanel.style.display = 'flex';
-    statusText.textContent = '小柔正在准备...';
+    document.getElementById('persona-bar').style.display = 'flex';
+    statusText.textContent = '正在准备...';
     startAutoTick();
   } catch (e) {
     showToast(e.message);
