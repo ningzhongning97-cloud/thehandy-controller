@@ -97,6 +97,18 @@ async def chat(req: ChatRequest):
         raise HTTPException(status_code=500, detail=str(e))
 
 
+@app.post("/set-persona")
+async def set_persona(data: dict):
+    try:
+        persona = data.get("persona", "flame")
+        ai = get_ai()
+        ai.set_persona(persona)
+        names = {"ice": "冷颜", "flame": "热焰"}
+        return {"status": "ok", "persona": persona, "name": names.get(persona, persona)}
+    except ValueError as e:
+        raise HTTPException(status_code=400, detail=str(e))
+
+
 @app.post("/auto-tick", response_model=ChatResponse)
 async def auto_tick():
     try:

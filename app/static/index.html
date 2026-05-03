@@ -228,8 +228,12 @@
 <body>
 
 <header>
-  <h1>🌸 小柔 AI 伴侣</h1>
-  <span id="conn-badge">未连接</span>
+  <h1 id="persona-title">🔥 热焰</h1>
+  <div style="display:flex;gap:8px;align-items:center">
+    <button id="btn-ice" onclick="switchPersona('ice')" style="padding:5px 12px;background:#1e1e30;border:1px solid #4a4a60;border-radius:6px;color:#94a3b8;font-size:0.78rem;">🧊 冷颜</button>
+    <button id="btn-flame" onclick="switchPersona('flame')" style="padding:5px 12px;background:#7c3aed;border:1px solid #7c3aed;border-radius:6px;color:#fff;font-size:0.78rem;">🔥 热焰</button>
+    <span id="conn-badge">未连接</span>
+  </div>
 </header>
 
 <!-- Connect Panel -->
@@ -262,6 +266,24 @@
 
 <script>
 const API = '';  // same origin
+
+async function switchPersona(p) {
+  const res = await fetch(`${API}/set-persona`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({persona: p}),
+  });
+  const data = await res.json();
+  const titles = {ice: '🧊 冷颜', flame: '🔥 热焰'};
+  document.getElementById('persona-title').textContent = titles[p];
+  document.getElementById('btn-ice').style.background   = p==='ice'   ? '#1e40af' : '#1e1e30';
+  document.getElementById('btn-ice').style.color        = p==='ice'   ? '#bfdbfe' : '#94a3b8';
+  document.getElementById('btn-flame').style.background = p==='flame' ? '#7c3aed' : '#1e1e30';
+  document.getElementById('btn-flame').style.color      = p==='flame' ? '#fff'    : '#94a3b8';
+  chatLog.innerHTML = '';
+  showToast(`已切换：${data.name}`);
+  scheduleNextTick(1000);
+}
 
 // --- DOM ---
 const connectPanel = document.getElementById('connect-panel');
