@@ -5,9 +5,10 @@ FastAPI backend for The Handy AI Voice Controller
 import os
 import sys
 import logging
+import httpx
 from fastapi import FastAPI, HTTPException
 from fastapi.staticfiles import StaticFiles
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, StreamingResponse
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -117,6 +118,52 @@ async def auto_tick():
         return ChatResponse(reply=reply, actions=actions)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
+
+# ElevenLabs voice IDs per persona
+PERSONA_VOICES = {
+    "flame":   "AZnzlk1XvdvUeBnXmlld",  # Domi - strong, passionate
+    "ice":     "21m00Tcm4TlvDq8ikWAM",  # Rachel - calm, controlled
+    "kitten":  "EXAVITQu4vr4xnSDxMaL",  # Bella - soft, young
+    "oneesan": "21m00Tcm4TlvDq8ikWAM",  # Rachel - mature, warm
+    "kouhai":  "MF3mGyEYCl7XYWbV9V6O",  # Elli - young, emotional
+    "boss":    "AZnzlk1XvdvUeBnXmlld",  # Domi - strong
+}
+
+
+class TTSRequest(BaseModel):
+    text: str
+    persona: str = "flame"
+
+
+@app.post("/tts")
+async def text_to_speech(req: TTSRequest):
+    api_key = os.getenv("ELEVENLABS_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="ElevenLabs API key not configured")
+
+    voice_id = PERSONA_VOICES.get(req.persona, PERSONA_VOICES["flame"])
+    url = f"https://api.elevenlabs.io/v1/text-to-speech/{voice_id}"
+
+    async with httpx.AsyncClient() as client:
+        resp = await client.post(
+            url,
+            headers={"xi-api-key": api_key, "Content-Type": "application/json"},
+            json={
+                "text": req.text,
+                "model_id": "eleven_multilingual_v2",
+                "voice_settings": {"stability": 0.4, "similarity_boost": 0.8, "style": 0.5},
+            },
+            timeout=30,
+        )
+        if resp.status_code != 200:
+            raise HTTPException(status_code=502, detail=f"ElevenLabs error: {resp.text}")
+
+        return StreamingResponse(
+            iter([resp.content]),
+            media_type="audio/mpeg",
+            headers={"Content-Length": str(len(resp.content))},
+        )
 
 
 @app.post("/stop")

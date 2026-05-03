@@ -310,8 +310,9 @@ async function switchPersona(p) {
   document.querySelectorAll('.p-btn').forEach(b => {
     b.classList.toggle('active', b.dataset.p === p);
   });
+  currentPersona = p;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
   chatLog.innerHTML = '';
-  window.speechSynthesis.cancel();
   isBusy = false;
   showToast(`已切换：${PERSONA_TITLES[p]}`);
   scheduleNextTick(1000);
@@ -483,27 +484,27 @@ btnSend.addEventListener('click', () => { scheduleNextTick(TICK_AFTER_USER); sen
 textInput.addEventListener('keydown', e => { if (e.key === 'Enter') { scheduleNextTick(TICK_AFTER_USER); sendMessage(textInput.value); } });
 
 // --- TTS ---
+let currentAudio = null;
+let currentPersona = 'flame';
+
 function speakText(text, onEnd) {
-  if (!window.speechSynthesis) return onEnd && onEnd();
-  window.speechSynthesis.cancel();
-  const utter = new SpeechSynthesisUtterance(text);
-  utter.lang = 'zh-CN';
-  utter.rate = 1.0;
-  utter.pitch = 1.1;
+  if (currentAudio) { currentAudio.pause(); currentAudio = null; }
 
-  // Pick a female Chinese voice if available
-  const voices = window.speechSynthesis.getVoices();
-  const zhVoice = voices.find(v => v.lang.startsWith('zh') && v.name.toLowerCase().includes('female'))
-                || voices.find(v => v.lang.startsWith('zh'));
-  if (zhVoice) utter.voice = zhVoice;
-
-  utter.onend = onEnd || null;
-  window.speechSynthesis.speak(utter);
+  fetch(`${API}/tts`, {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({text, persona: currentPersona}),
+  })
+  .then(r => r.blob())
+  .then(blob => {
+    const url = URL.createObjectURL(blob);
+    currentAudio = new Audio(url);
+    currentAudio.onended = () => { URL.revokeObjectURL(url); onEnd && onEnd(); };
+    currentAudio.onerror = () => { onEnd && onEnd(); };
+    currentAudio.play().catch(() => onEnd && onEnd());
+  })
+  .catch(() => onEnd && onEnd());
 }
-
-// Preload voices
-window.speechSynthesis.getVoices();
-window.speechSynthesis.addEventListener('voiceschanged', () => window.speechSynthesis.getVoices());
 
 // --- STT ---
 const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
