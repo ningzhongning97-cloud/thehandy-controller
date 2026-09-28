@@ -6,11 +6,11 @@ Version: 0.1.0
 
 from .client import HandyController
 from .exceptions import (
-    HandyException,
-    HandyConnectionError,
     HandyAPIError,
-    HandyTimeoutError,
+    HandyConnectionError,
     HandyDeviceError,
+    HandyException,
+    HandyTimeoutError,
 )
 
 __version__ = "0.1.0"

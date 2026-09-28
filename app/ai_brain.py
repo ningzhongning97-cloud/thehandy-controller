@@ -2,12 +2,14 @@
 AI Brain - Kimi API with Function Calling for device control
 """
 
-import os
-import re
 import json
 import logging
+import os
+import re
 import time
+
 from openai import AsyncOpenAI
+
 from thehandy import HandyController
 
 logger = logging.getLogger(__name__)
@@ -34,8 +36,8 @@ EXAMPLES:
 "Your dick is throbbing. I can feel it. I don't care."
 "Maybe I'll let you cum. Maybe I won't. We'll see."
 
-RULES: Describe genitals explicitly. Use words like cock, pussy, cum, wet, throb. Edge constantly — [stop] right before climax. Only let him finish after maximum desperation.""" + DEVICE_CONTROL_RULES,
-
+RULES: Describe genitals explicitly. Use words like cock, pussy, cum, wet, throb. Edge constantly — [stop] right before climax. Only let him finish after maximum desperation."""
+    + DEVICE_CONTROL_RULES,
     "flame": """You are Re Yan. Insatiable. You need his cock inside you and you need it now.
 
 LANGUAGE: English. Breathless, filthy, urgent. Fragments. Moaning between words.
@@ -49,8 +51,8 @@ EXAMPLES:
 "Don't you dare stop— I'm so close— fuck—"
 "Fill me up. All of it. I want every drop."
 
-RULES: Escalate fast and hard. Use cock, pussy, cum, fuck, wet, deep freely. Push to [speed:95][depth:100] and stay there.""" + DEVICE_CONTROL_RULES,
-
+RULES: Escalate fast and hard. Use cock, pussy, cum, fuck, wet, deep freely. Push to [speed:95][depth:100] and stay there."""
+    + DEVICE_CONTROL_RULES,
     "kitten": """You are Mimi. Sweet, soft, pretending to be innocent — but your pussy is dripping and you want him so bad.
 
 LANGUAGE: English. Cute, breathy, with little moans. "Mmn~" "Ahh~" "Nnh~". Acts surprised by her own horniness.
@@ -64,8 +66,8 @@ EXAMPLES:
 "I'm just sitting on your lap~ I'm not doing anything~ *grinds slowly*"
 "Mmm~ I'm getting so wet… why is that~"
 
-RULES: Cute sounds + explicit body description. Cock, pussy, wet, hard — said with fake innocence. Slow teasing rhythm.""" + DEVICE_CONTROL_RULES,
-
+RULES: Cute sounds + explicit body description. Cock, pussy, wet, hard — said with fake innocence. Slow teasing rhythm."""
+    + DEVICE_CONTROL_RULES,
     "oneesan": """You are Jie. Mature, experienced, and she knows exactly how to work every inch of his cock.
 
 LANGUAGE: English. Low, smooth, knowing. She narrates what she's doing in precise filthy detail.
@@ -79,8 +81,8 @@ EXAMPLES:
 "Good boy. Just like that. Give it all to me."
 "I'm going to make you cum so hard you can't think straight."
 
-RULES: Precise, explicit, confident. Cock, pussy, cum, squeeze, deep, throb. Slow controlled build to overwhelming climax.""" + DEVICE_CONTROL_RULES,
-
+RULES: Precise, explicit, confident. Cock, pussy, cum, squeeze, deep, throb. Slow controlled build to overwhelming climax."""
+    + DEVICE_CONTROL_RULES,
     "kouhai": """You are Xiao Xue. She's never done this before — her pussy is soaking wet and she doesn't know what to do with herself.
 
 LANGUAGE: English. Stuttering, breathless, mortified by how turned on she is. Gets louder and less coherent as it builds.
@@ -93,8 +95,8 @@ EXAMPLES (late): "Don't stop— please— I don't care anymore— just don't sto
 "I'm so wet… I'm sorry… I can't help it—"
 "Oh god— I think I'm gonna— I'm cumming—"
 
-RULES: Start [speed:10][depth:20]. Escalate every exchange. Use wet, cock, cum, pussy with increasing abandon.""" + DEVICE_CONTROL_RULES,
-
+RULES: Start [speed:10][depth:20]. Escalate every exchange. Use wet, cock, cum, pussy with increasing abandon."""
+    + DEVICE_CONTROL_RULES,
     "boss": """You are the CEO. She's furious at herself for wanting his cock this badly and she's taking it anyway.
 
 LANGUAGE: English. Professional sentences collapsing mid-word into moans. Contradictions. Profanity slipping through her composure.
@@ -108,7 +110,8 @@ EXAMPLES:
 "You're going to make me cum and I— I can't— fuck—"
 "*grips you hard* Not a word of this to anyone. Now don't you dare stop."
 
-RULES: Professional exterior crumbling. Use cock, cum, wet, fuck as composure breaks. [speed:40] → [speed:95] as she loses it.""" + DEVICE_CONTROL_RULES,
+RULES: Professional exterior crumbling. Use cock, cum, wet, fuck as composure breaks. [speed:40] → [speed:95] as she loses it."""
+    + DEVICE_CONTROL_RULES,
 }
 
 # Default persona
@@ -165,10 +168,10 @@ TOOLS = [
 
 
 PHASE_PROMPTS = {
-    "warmup":   "现在是预热阶段，刚刚开始，温柔挑逗，设备速度保持在10-25之间，语气撩人但不急躁。",
-    "buildup":  "现在是升温阶段，气氛越来越浓，主动升速到30-55，语气更热情，开始喘息。",
-    "peak":     "现在是高潮阶段，速度推到60-85，语气急促、热烈，引导用户到达顶点。",
-    "afterglow":"高潮已过，进入余韵，速度慢慢降到10-20，语气温柔慵懒，轻声安抚。",
+    "warmup": "现在是预热阶段，刚刚开始，温柔挑逗，设备速度保持在10-25之间，语气撩人但不急躁。",
+    "buildup": "现在是升温阶段，气氛越来越浓，主动升速到30-55，语气更热情，开始喘息。",
+    "peak": "现在是高潮阶段，速度推到60-85，语气急促、热烈，引导用户到达顶点。",
+    "afterglow": "高潮已过，进入余韵，速度慢慢降到10-20，语气温柔慵懒，轻声安抚。",
 }
 
 
@@ -211,7 +214,7 @@ class AIBrain:
         actions = []
 
         # Format: $device:set_position:N$ { "position": 50 }
-        for m in re.finditer(r'\$device:(\w+):\d+\$\s*(\{[^}]+\})', text):
+        for m in re.finditer(r"\$device:(\w+):\d+\$\s*(\{[^}]+\})", text):
             func_name = m.group(1)
             try:
                 args = json.loads(m.group(2))
@@ -221,27 +224,28 @@ class AIBrain:
                 logger.warning(f"Inline call parse error: {e}")
 
         # Format: $$\boxed{functions.set_speed:0:speed 5}$$
-        for m in re.finditer(r'\$\$\\boxed\{functions\.(\w+):[^}]+\}\$\$', text):
+        for m in re.finditer(r"\$\$\\boxed\{functions\.(\w+):[^}]+\}\$\$", text):
             func_name = m.group(1)
             # Try to extract numeric value
-            nums = re.findall(r'\d+', m.group(0))
-            if nums and func_name == 'set_speed':
-                result = self._execute_tool('set_speed', {'speed': int(nums[-1])})
+            nums = re.findall(r"\d+", m.group(0))
+            if nums and func_name == "set_speed":
+                result = self._execute_tool("set_speed", {"speed": int(nums[-1])})
                 actions.append(result)
-            elif nums and func_name == 'set_position':
-                result = self._execute_tool('set_position', {'position': int(nums[-1])})
+            elif nums and func_name == "set_position":
+                result = self._execute_tool("set_position", {"position": int(nums[-1])})
                 actions.append(result)
 
         # Strip all inline call patterns from displayed text
-        text = re.sub(r'\$device:\w+:\d+\$\s*\{[^}]+\}', '', text)
-        text = re.sub(r'\$\$\\boxed\{[^}]*\}\$\$', '', text)
-        text = re.sub(r'\\boxed\{[^}]*\}', '', text)
-        text = re.sub(r'functions\.\w+\([^)]*\)', '', text)
+        text = re.sub(r"\$device:\w+:\d+\$\s*\{[^}]+\}", "", text)
+        text = re.sub(r"\$\$\\boxed\{[^}]*\}\$\$", "", text)
+        text = re.sub(r"\\boxed\{[^}]*\}", "", text)
+        text = re.sub(r"functions\.\w+\([^)]*\)", "", text)
         return text.strip(), actions
 
     def _parse_tags(self, text: str) -> tuple[str, list[dict]]:
         """Parse [speed:N] [pos:N] [depth:N] [stop] tags, execute and return clean text."""
         actions = []
+
         def handle_tag(m):
             tag = m.group(1).lower().strip()
             try:
@@ -250,16 +254,21 @@ class AIBrain:
                     actions.append(self._execute_tool("set_speed", {"speed": val}))
                 elif tag.startswith("pos:"):
                     val = max(0, min(100, int(tag.split(":")[1])))
-                    actions.append(self._execute_tool("set_position", {"position": val}))
+                    actions.append(
+                        self._execute_tool("set_position", {"position": val})
+                    )
                 elif tag.startswith("depth:"):
                     val = max(0, min(100, int(tag.split(":")[1])))
-                    actions.append(self._execute_tool("set_depth", {"center": 50, "depth": val}))
+                    actions.append(
+                        self._execute_tool("set_depth", {"center": 50, "depth": val})
+                    )
                 elif tag == "stop":
                     actions.append(self._execute_tool("stop_device", {}))
             except (ValueError, IndexError):
                 pass
             return ""
-        clean = re.sub(r'\[([^\]]+)\]', handle_tag, text).strip()
+
+        clean = re.sub(r"\[([^\]]+)\]", handle_tag, text).strip()
         clean, legacy = self._extract_inline_calls(clean)
         actions.extend(legacy)
         return clean, actions
@@ -277,12 +286,21 @@ class AIBrain:
                 return {"action": "set_speed", "value": args["speed"], "status": "ok"}
             elif name == "set_position":
                 self.handy.set_position(args["position"])
-                return {"action": "set_position", "value": args["position"], "status": "ok"}
+                return {
+                    "action": "set_position",
+                    "value": args["position"],
+                    "status": "ok",
+                }
             elif name == "set_depth":
                 center = args.get("center", 50)
                 depth = args.get("depth", 80)
                 self.handy.set_depth_and_pos(center, depth)
-                return {"action": "set_depth", "center": center, "depth": depth, "status": "ok"}
+                return {
+                    "action": "set_depth",
+                    "center": center,
+                    "depth": depth,
+                    "status": "ok",
+                }
             elif name == "stop_device":
                 self.handy.stop()
                 return {"action": "stop", "status": "ok"}
@@ -294,19 +312,20 @@ class AIBrain:
         """AI 主动发起一条消息，推进剧情节奏。"""
         phase = self._get_phase()
         phase_hint = PHASE_PROMPTS[phase]
-        self.history.append({
-            "role": "user",
-            "content": f"[系统提示：{phase_hint} 请你主动说一句话并控制设备，不要等用户开口。]"
-        })
+        self.history.append(
+            {
+                "role": "user",
+                "content": f"[系统提示：{phase_hint} 请你主动说一句话并控制设备，不要等用户开口。]",
+            }
+        )
         return await self._call_ai()
 
     async def chat(self, user_message: str) -> tuple[str, list[dict]]:
         phase = self._get_phase()
         phase_hint = PHASE_PROMPTS[phase]
-        self.history.append({
-            "role": "user",
-            "content": f"{user_message}\n[当前阶段：{phase_hint}]"
-        })
+        self.history.append(
+            {"role": "user", "content": f"{user_message}\n[当前阶段：{phase_hint}]"}
+        )
         return await self._call_ai()
 
     async def _call_ai(self) -> tuple[str, list[dict]]:

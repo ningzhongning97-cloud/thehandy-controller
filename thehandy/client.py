@@ -2,15 +2,17 @@
 Main API client for The Handy Controller
 """
 
-import requests
 import logging
-from typing import Dict, Any, Optional
+from typing import Any, Dict, Optional
+
+import requests
+
 from .config import get_config
 from .exceptions import (
-    HandyConnectionError,
     HandyAPIError,
-    HandyTimeoutError,
+    HandyConnectionError,
     HandyDeviceError,
+    HandyTimeoutError,
 )
 
 # Setup logging
@@ -29,10 +31,12 @@ class HandyController:
         """
         self.config = get_config()
         self.connection_key = connection_key or self.config.CONNECTION_KEY
-        
+
         if not self.connection_key:
-            raise HandyConnectionError("Connection key is required. Set HANDY_CONNECTION_KEY environment variable.")
-        
+            raise HandyConnectionError(
+                "Connection key is required. Set HANDY_CONNECTION_KEY environment variable."
+            )
+
         self.base_url = self.config.API_BASE_URL
         self.timeout = self.config.REQUEST_TIMEOUT
         self.session = requests.Session()
@@ -90,7 +94,9 @@ class HandyController:
             elif response.status_code == 404:
                 raise HandyAPIError(f"Endpoint not found: {endpoint}")
             else:
-                raise HandyDeviceError(f"Device error: {response.status_code} - {response.text}")
+                raise HandyDeviceError(
+                    f"Device error: {response.status_code} - {response.text}"
+                )
 
         except requests.Timeout:
             raise HandyTimeoutError(f"Request timed out after {self.timeout} seconds")
@@ -108,7 +114,9 @@ class HandyController:
             self._device_info = self.get_device_info()
             if not self._device_info.get("connected", False):
                 self._is_connected = False
-                raise HandyConnectionError("设备未在线，请检查 The Handy 是否已连上 WiFi，以及 Connection Key 是否正确")
+                raise HandyConnectionError(
+                    "设备未在线，请检查 The Handy 是否已连上 WiFi，以及 Connection Key 是否正确"
+                )
             self._is_connected = True
             logger.info(f"Connected to device: {self._device_info}")
             return True
@@ -173,8 +181,11 @@ class HandyController:
         """
         if not 0 <= position <= 100:
             raise ValueError("Position must be between 0 and 100")
-        return self._make_request("PUT", "/slide/position/absolute/timestep",
-                                  data={"position": position, "duration": 300})
+        return self._make_request(
+            "PUT",
+            "/slide/position/absolute/timestep",
+            data={"position": position, "duration": 300},
+        )
 
     def stop(self) -> Dict[str, Any]:
         """Stop the device (HAMP stop)"""

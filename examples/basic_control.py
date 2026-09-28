@@ -3,11 +3,13 @@ Basic control example for The Handy Controller
 """
 
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
+
+import time
 
 from thehandy import HandyController
 from thehandy.exceptions import HandyException
-import time
 
 
 def main():

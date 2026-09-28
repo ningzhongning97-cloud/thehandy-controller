@@ -2,13 +2,14 @@
 FastAPI backend for The Handy AI Voice Controller
 """
 
+import logging
 import os
 import sys
-import logging
+
 import httpx
 from fastapi import FastAPI, HTTPException
-from fastapi.staticfiles import StaticFiles
 from fastapi.responses import HTMLResponse, StreamingResponse
+from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
@@ -23,7 +24,11 @@ logger = logging.getLogger(__name__)
 app = FastAPI(title="The Handy AI Voice Controller")
 
 # Mount static files
-app.mount("/static", StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")), name="static")
+app.mount(
+    "/static",
+    StaticFiles(directory=os.path.join(os.path.dirname(__file__), "static")),
+    name="static",
+)
 
 # Global instances
 handy: HandyController = None
@@ -122,12 +127,12 @@ async def auto_tick():
 
 # ElevenLabs voice IDs per persona
 PERSONA_VOICES = {
-    "flame":   "AZnzlk1XvdvUeBnXmlld",  # Domi - strong, passionate
-    "ice":     "21m00Tcm4TlvDq8ikWAM",  # Rachel - calm, controlled
-    "kitten":  "EXAVITQu4vr4xnSDxMaL",  # Bella - soft, young
+    "flame": "AZnzlk1XvdvUeBnXmlld",  # Domi - strong, passionate
+    "ice": "21m00Tcm4TlvDq8ikWAM",  # Rachel - calm, controlled
+    "kitten": "EXAVITQu4vr4xnSDxMaL",  # Bella - soft, young
     "oneesan": "21m00Tcm4TlvDq8ikWAM",  # Rachel - mature, warm
-    "kouhai":  "MF3mGyEYCl7XYWbV9V6O",  # Elli - young, emotional
-    "boss":    "AZnzlk1XvdvUeBnXmlld",  # Domi - strong
+    "kouhai": "MF3mGyEYCl7XYWbV9V6O",  # Elli - young, emotional
+    "boss": "AZnzlk1XvdvUeBnXmlld",  # Domi - strong
 }
 
 
@@ -152,12 +157,18 @@ async def text_to_speech(req: TTSRequest):
             json={
                 "text": req.text,
                 "model_id": "eleven_multilingual_v2",
-                "voice_settings": {"stability": 0.4, "similarity_boost": 0.8, "style": 0.5},
+                "voice_settings": {
+                    "stability": 0.4,
+                    "similarity_boost": 0.8,
+                    "style": 0.5,
+                },
             },
             timeout=30,
         )
         if resp.status_code != 200:
-            raise HTTPException(status_code=502, detail=f"ElevenLabs error: {resp.text}")
+            raise HTTPException(
+                status_code=502, detail=f"ElevenLabs error: {resp.text}"
+            )
 
         return StreamingResponse(
             iter([resp.content]),

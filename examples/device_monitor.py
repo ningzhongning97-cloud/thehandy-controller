@@ -3,12 +3,14 @@ Device monitor example for The Handy Controller
 """
 
 import sys
-sys.path.insert(0, '.')
+
+sys.path.insert(0, ".")
+
+import time
+from datetime import datetime
 
 from thehandy import HandyController
 from thehandy.exceptions import HandyException
-import time
-from datetime import datetime
 
 
 def print_status(controller):
